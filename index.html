@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PRANSHU Resume Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- PDF LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
+header{background:#020617;text-align:center;padding:16px;font-size:22px;font-weight:bold}
+.container{max-width:1200px;margin:auto;padding:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:#111827;padding:15px;border-radius:14px}
+input,textarea,button{
+width:100%;padding:12px;margin-top:8px;border-radius:10px;border:none;font-size:15px
+}
+button{background:#22c55e;color:#022c22;font-weight:bold}
+
+.resume{background:#fff;color:#000;border-radius:12px;padding:20px}
+.header{display:flex;gap:15px;align-items:center}
+.header img{width:100px;height:100px;border-radius:50%;object-fit:cover}
+.skill{display:inline-block;background:#e5e7eb;padding:5px 10px;border-radius:20px;margin:4px;font-size:13px}
+.cert-preview img{width:100%;border-radius:10px;margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<header>PRANSHU – Resume + Certificate PDF</header>
+
+<div class="container grid">
+
+<div class="card">
+<h3>Enter Details</h3>
+
+<input id="name" placeholder="Full Name">
+<input id="email" placeholder="Email">
+<input id="phone" placeholder="Phone">
+
+<textarea id="profile" placeholder="Profile Summary"></textarea>
+<textarea id="skills" placeholder="Skills (comma separated)"></textarea>
+<textarea id="experience" placeholder="Experience"></textarea>
+<textarea id="education" placeholder="Education"></textarea>
+
+<label>Photo</label>
+<input type="file" id="photo" accept="image/*">
+
+<label>Certificate (Image or PDF)</label>
+<input type="file" id="certificate" accept="image/*,.pdf">
+
+<button onclick="generate()">Generate Resume</button>
+<button onclick="downloadPDF()">Download PDF</button>
+</div>
+
+<div class="card">
+<h3>Preview</h3>
+<div id="resume" class="resume">Fill details & generate</div>
+<div id="certBox" class="cert-preview"></div>
+</div>
+
+</div>
+
+<script>
+let imageData="", certData="", certType="";
+
+function generate(){
+/* PHOTO */
+if(photo.files[0]){
+let fr=new FileReader();
+fr.onload=e=>{imageData=e.target.result;build();};
+fr.readAsDataURL(photo.files[0]);
+}else build();
+
+/* CERTIFICATE */
+if(certificate.files[0]){
+certType=certificate.files[0].type;
+let cr=new FileReader();
+cr.onload=e=>{
+certData=e.target.result;
+showCertificate();
+};
+cr.readAsDataURL(certificate.files[0]);
+}
+}
+
+function build(){
+resume.innerHTML=`
+<div class="header">
+${imageData?`<img src="${imageData}">`:""}
+<div>
+<h2>${name.value}</h2>
+<p>${email.value} | ${phone.value}</p>
+</div>
+</div>
+
+<h3>Profile</h3>
+<p>${profile.value}</p>
+
+<h3>Skills</h3>
+${skills.value.split(",").map(s=>`<span class="skill">${s}</span>`).join("")}
+
+<h3>Experience</h3>
+<p>${experience.value}</p>
+
+<h3>Education</h3>
+<p>${education.value}</p>
+`;
+}
+
+function showCertificate(){
+if(certType.includes("image")){
+certBox.innerHTML=`<h3>Certificate</h3><img src="${certData}">`;
+}else{
+certBox.innerHTML=`<h3>Certificate</h3><p>PDF certificate attached (will be added as page)</p>`;
+}
+}
+
+/* ✅ RESUME PAGE + CERTIFICATE PAGE */
+function downloadPDF(){
+const { jsPDF } = window.jspdf;
+const pdf = new jsPDF("p","mm","a4");
+
+/* PAGE 1 – RESUME */
+html2canvas(resume,{scale:2}).then(canvas=>{
+let img=canvas.toDataURL("image/png");
+let w=210;
+let h=(canvas.height*w)/canvas.width;
+pdf.addImage(img,"PNG",0,0,w,h);
+
+/* PAGE 2 – CERTIFICATE */
+if(certData && certType.includes("image")){
+pdf.addPage();
+let imgH=(canvas.height*w)/canvas.width;
+pdf.addImage(certData,"PNG",0,0,210,297);
+}
+
+pdf.save(name.value+"_Resume_With_Certificate.pdf");
+});
+}
+</script>
+
+</body>
+</html>
